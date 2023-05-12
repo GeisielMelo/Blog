@@ -1,5 +1,6 @@
 //jshint esversion:6
 
+// Import the required modules.
 const express = require("express");
 const bodyParser = require("body-parser");
 const ejs = require("ejs");
@@ -7,10 +8,22 @@ const _ = require('lodash');
 const crud = require(__dirname + "/crud.js");
 const { aboutContent, contactContent } = require(__dirname + '/content');
 
+// Create  a new instance of express.
 const app = express();
 app.set('view engine', 'ejs');
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(express.static("public"));
+
+// Get all items from database and set it in posts array.
+var posts = [];
+function setDados(items){
+  posts = items;
+  return items;
+}
+
+crud.getAllItems()
+  .then((items) => { setDados(items) })
+  .catch((err) => { console.log(err) });
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -18,10 +31,7 @@ app.use(express.static("public"));
 ///////////////////////////////////////////////////////////////////////////////
 
 app.get("/", function(req, res) {
-  crud.getAllItems()
-    .then((data) => { posts = data})
-    .then(() => res.render("home", {newPost: posts}))
-    .catch((err) => {console.log(err)});
+  res.render("home", {newPost: posts});
 });
 
 app.get("/about", function(req, res) {
@@ -57,8 +67,14 @@ app.post("/compose", function(req, res){
   };
 
   crud.addItem(post)
-    .then(() => {res.redirect("/")})
-    .catch((err) => {console.log(err)});
+  .then(() => crud.getAllItems())
+  .then((items) => {setDados(items);
+    res.redirect("/");
+  })
+  .catch((err) => {
+    console.log(err);
+  });
+
 });
 
 ///////////////////////////////////////////////////////////////////////////////
